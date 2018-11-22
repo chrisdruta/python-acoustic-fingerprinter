@@ -1,0 +1,3 @@
+
+class AudioFileFingerPrinter:
+    pass
