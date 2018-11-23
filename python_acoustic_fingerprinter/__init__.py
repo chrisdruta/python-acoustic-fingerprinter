@@ -1,3 +1,4 @@
+from scipy import signal
 
-class AudioFileFingerPrinter:
-    pass
+def FingerPrint(samples, fs=44100):
+    return
