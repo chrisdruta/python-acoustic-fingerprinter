@@ -10,12 +10,15 @@ from scipy.io import wavfile
 
 fs, data = wavfile.read('spacejam.wav')
 leftChannelData = data[:, 0]
-print(np.amax(leftChannelData))
 
 f, t, spectogramX = signal.spectrogram(leftChannelData, fs)
+spectogramX = 20 * np.log10(spectogramX)
+spectogramX[spectogramX == -np.inf] = 0
+print(np.shape(spectogramX))
 
-plt.pcolormesh(t, f, spectogramX)
-#plt.imshow(spectogramX)
-plt.ylabel('Frequency [Hz]')
-plt.xlabel('Time [sec]')
-plt.show()
+if 1:
+    plt.pcolormesh(t, f, spectogramX)
+    plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time [sec]')
+    plt.colorbar()
+    plt.show()
