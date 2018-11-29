@@ -10,8 +10,7 @@ from scipy.io import wavfile
 
 fs, data = wavfile.read('spacejam.wav')
 monoChannelData = data[:, 0] # Left channel
-#monoChannelData = monoChannelData[int(9696120/2):int((9696120/2 + 9696120/300 * 5))]
-monoChannelData = monoChannelData[int(9696120/2):int((9696120/2 + 1*44100/4))]
+monoChannelData = monoChannelData[int(9696120/2):int((9696120/2 + 5*44100))]
 
 f, t, spectogramX = signal.spectrogram(monoChannelData, fs)
 spectogramX = 20 * np.log10(spectogramX)
@@ -22,11 +21,12 @@ print(numFreqBins, numSamples)
 
 freqsAt0 = spectogramX[:,0]
 
-plt.figure()
-plt.title('DTFT of mono channel Space Jam at t=0')
-plt.plot(f, freqsAt0)
-plt.xlabel('Frequency [Hz]')
-plt.ylabel('dB')
+if 1:
+    plt.figure()
+    plt.title('DTFT of mono channel Space Jam at t=0')
+    plt.plot(f, freqsAt0)
+    plt.xlabel('Frequency [Hz]')
+    plt.ylabel('dB')
 
 if 1:
     plt.figure()
@@ -34,6 +34,5 @@ if 1:
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
     plt.colorbar()
-    plt.show()
 
 plt.show()
