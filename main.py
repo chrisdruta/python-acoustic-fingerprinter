@@ -8,45 +8,72 @@ import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.io import wavfile
 
-fs, data = wavfile.read('spacejam.wav')
-monoChannelData = data[:, 0] # Left channel
-monoChannelData = monoChannelData[int(9696120/2):int((9696120/2 + 5*44100))]
+import sounddevice as sd
+sd.default.device = 7
 
-f, t, spectogramX = signal.spectrogram(monoChannelData, fs)
-spectogramX = 20 * np.log10(spectogramX)
-spectogramX[spectogramX == -np.inf] = 0
+clipDuration = 5
 
-numFreqBins, numSamples = spectogramX.shape
-print(numFreqBins, numSamples)
+fs, cleanData = wavfile.read('spacejam.wav')
+cleanData = cleanData[:, 0] # Left channel
+cleanData = cleanData[int(len(cleanData)/2):int(len(cleanData)/2 + clipDuration * fs)]
 
-freqsAt0 = spectogramX[:,0]
-noise = np.random.normal(60,5,len(freqsAt0))
+noise = wavfile.read('noise.wav')[1]
+noise = noise[int(len(noise)/2): int(len(noise)/2) + clipDuration * fs]
 
-freqsAt0Noise = freqsAt0 + noise
-#wc = 2 * np.pi * 21000 / fs
-#r = 10
-#b = [1, -r*(np.e**(1j*wc) + np.e**(-1j*wc)), r**2]
-#a = [-1, 0, -1]
+dirtyData = cleanData * 0.1 + noise * 1.5
+dirtyData = dirtyData.astype(np.int16)
+#sd.play(dirtyData, fs)
 
-#noise = np.abs(signal.lfilter(b, a, noise))
+fxClean, txClean, spectogramClean = signal.spectrogram(cleanData, fs)
+spectogramClean[spectogramClean == -np.inf] = 0
+spectogramClean = 20 * np.log10(spectogramClean)
 
-ind = signal.find_peaks(freqsAt0)[0]
+fxDirty, txDirty, spectogramDirty = signal.spectrogram(dirtyData, fs)
+spectogramDirty[spectogramDirty == -np.inf] = 0
+spectogramDirty = 20 * np.log10(spectogramDirty)
+
+freqsAt0Clean = spectogramClean[:,0]
+freqsAt0Dirty = spectogramDirty[:,0]
+
+indClean = signal.find_peaks(freqsAt0Clean)[0]
+indDirty = signal.find_peaks(freqsAt0Dirty)[0]
 #ind = signal.find_peaks_cwt(freqsAt0, np.arange(1,10))
 
 if 1:
     plt.figure()
-    plt.title('DTFT of mono channel Space Jam at t=0')
-    plt.plot(f, freqsAt0)
-    plt.stem(f[ind],freqsAt0[ind], linefmt=':', basefmt=' ')
-    #plt.stem(f, noise)
+
+    plt.subplot(211)
+    plt.plot(fxClean, freqsAt0Clean)
+    plt.stem(fxClean[indClean],freqsAt0Clean[indClean], linefmt=':', basefmt=' ')
+    plt.title('DTFT Clean t=0')
+
+    plt.subplot(212)
+    plt.plot(fxDirty, freqsAt0Dirty)
+    plt.stem(fxDirty[indDirty],freqsAt0Dirty[indDirty], linefmt=':', basefmt=' ')
+    plt.title('DTFT Dirty t=0')
+
     plt.xlabel('Frequency [Hz]')
     plt.ylabel('dB')
 
-if 0:
+if 1:
     plt.figure()
-    plt.pcolormesh(t, f, spectogramX)
+
+    plt.subplot(211)
+    plt.pcolormesh(txClean, fxClean, spectogramClean)
+    plt.colorbar()
+
+    x = [0]
+    y = [indClean]
+    for xe, ye in zip(x, y):
+        plt.scatter([xe] * len(ye), fxClean[ye])
+    
+    plt.title('Clean Spectogram')
+
+    plt.subplot(212)
+    plt.pcolormesh(txDirty, fxDirty, spectogramDirty)
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
+    plt.title('Clean Spectogram')
     plt.colorbar()
 
 plt.show()
