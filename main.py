@@ -20,60 +20,73 @@ cleanData = cleanData[int(len(cleanData)/2):int(len(cleanData)/2 + clipDuration 
 noise = wavfile.read('noise.wav')[1]
 noise = noise[int(len(noise)/2): int(len(noise)/2) + clipDuration * fs]
 
+test = noise * 1.5
+test = test.astype(np.int16)
+
+"""
+ff, tt, test = signal.spectrogram(noise, fs)
+test[test == -np.inf] = 0
+test = np.log10(test)
+plt.figure()
+plt.pcolormesh(tt, ff, test)
+plt.ylabel('Frequency [Hz]')
+plt.xlabel('Time [sec]')
+plt.colorbar()
+plt.title('test')"""
+
+
 dirtyData = cleanData * 0.1 + noise * 1.5
 dirtyData = dirtyData.astype(np.int16)
 #sd.play(dirtyData, fs)
 
-fxClean, txClean, spectogramClean = signal.spectrogram(cleanData, fs)
-spectogramClean[spectogramClean == -np.inf] = 0
-spectogramClean = 20 * np.log10(spectogramClean)
+fxClean, txClean, spectrogramClean = signal.spectrogram(cleanData, fs)
+spectrogramClean[spectrogramClean == -np.inf] = 0
+spectrogramClean = 20 * np.log10(spectrogramClean)
 
-fxDirty, txDirty, spectogramDirty = signal.spectrogram(dirtyData, fs)
-spectogramDirty[spectogramDirty == -np.inf] = 0
-spectogramDirty = 20 * np.log10(spectogramDirty)
+fxDirty, txDirty, spectrogramDirty = signal.spectrogram(dirtyData, fs)
+spectrogramDirty[spectrogramDirty == -np.inf] = 0
+spectrogramDirty = 20 * np.log10(spectrogramDirty)
 
-freqsAt0Clean = spectogramClean[:,0]
-freqsAt0Dirty = spectogramDirty[:,0]
+freqsAt0Clean = spectrogramClean[:,0]
+freqsAt0Dirty = spectrogramDirty[:,0]
 
-indClean = signal.find_peaks(freqsAt0Clean)[0]
-indDirty = signal.find_peaks(freqsAt0Dirty)[0]
-#ind = signal.find_peaks_cwt(freqsAt0, np.arange(1,10))
+times = []
+peaksClean = []
+peaksDirty = []
+window = [10]
 
-if 1:
-    plt.figure()
-
-    plt.subplot(211)
-    plt.plot(fxClean, freqsAt0Clean)
-    plt.stem(fxClean[indClean],freqsAt0Clean[indClean], linefmt=':', basefmt=' ')
-    plt.title('DTFT Clean t=0')
-
-    plt.subplot(212)
-    plt.plot(fxDirty, freqsAt0Dirty)
-    plt.stem(fxDirty[indDirty],freqsAt0Dirty[indDirty], linefmt=':', basefmt=' ')
-    plt.title('DTFT Dirty t=0')
-
-    plt.xlabel('Frequency [Hz]')
-    plt.ylabel('dB')
-
-if 1:
-    plt.figure()
-
-    plt.subplot(211)
-    plt.pcolormesh(txClean, fxClean, spectogramClean)
-    plt.colorbar()
-
-    x = [0]
-    y = [indClean]
-    for xe, ye in zip(x, y):
-        plt.scatter([xe] * len(ye), fxClean[ye])
+for i in range(0, spectrogramClean.shape[1], 15):
+    times.append(i)
+    freqsAtiClean = spectrogramClean[:,i]
+    freqsAtiDirty = spectrogramDirty[:,i]
     
-    plt.title('Clean Spectogram')
+    peaksClean.append(signal.find_peaks_cwt(freqsAtiClean, window))
+    peaksDirty.append(signal.find_peaks_cwt(freqsAtiDirty, window))
 
-    plt.subplot(212)
-    plt.pcolormesh(txDirty, fxDirty, spectogramDirty)
+if 1:
+    plt.figure()
+
+    plt.subplot(211)
+    plt.pcolormesh(txClean, fxClean, spectrogramClean)
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
-    plt.title('Clean Spectogram')
     plt.colorbar()
 
+    for xe, ye in zip(times, peaksClean):
+        plt.scatter([txClean[xe]] * len(ye), fxClean[ye], edgecolors='black')
+
+    plt.title('Clean spectrogram')
+
+    plt.subplot(212)
+    plt.pcolormesh(txDirty, fxDirty, spectrogramDirty)
+    plt.ylabel('Frequency [Hz]')
+    plt.xlabel('Time [sec]')
+    plt.colorbar()
+
+    for xe, ye in zip(times, peaksDirty):
+        plt.scatter([txDirty[xe]] * len(ye), fxDirty[ye], edgecolors='black')
+    
+    plt.title('Dirty spectrogram')
+
+plt.tight_layout()
 plt.show()
