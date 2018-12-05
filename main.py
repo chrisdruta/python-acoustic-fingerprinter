@@ -10,7 +10,9 @@ from scipy import signal
 from scipy.io import wavfile
 
 import sounddevice as sd
-#sd.default.device = 7
+sd.default.device = 7
+
+from python_acoustic_fingerprinter import fingerprint as fp
 
 clipDuration = 5
 
@@ -21,65 +23,15 @@ cleanData = cleanData[int(len(cleanData)/2):int(len(cleanData)/2 + clipDuration 
 noise = wavfile.read('noise.wav')[1]
 noise = noise[int(len(noise)/2): int(len(noise)/2) + clipDuration * fs]
 
-test = noise * 1.5
-test = test.astype(np.int16)
-
-"""
-ff, tt, test = signal.spectrogram(noise, fs)
-test[test == -np.inf] = 0
-test = np.log10(test)
-plt.figure()
-plt.pcolormesh(tt, ff, test)
-plt.ylabel('Frequency [Hz]')
-plt.xlabel('Time [sec]')
-plt.colorbar()
-plt.title('test')"""
-
-
-dirtyData = cleanData * 0.1 + noise * 1.5
+dirtyData = cleanData * 0.1 + noise * 5
 dirtyData = dirtyData.astype(np.int16)
 sd.play(dirtyData, fs)
 
-fxClean, txClean, spectrogramClean = signal.spectrogram(cleanData, fs)
-spectrogramClean[spectrogramClean == -np.inf] = 0
-spectrogramClean = 20 * np.log10(spectrogramClean)
-spectrogramClean = spectrogramClean/np.amax(spectrogramClean)
+fxClean, txClean, spectrogramClean = fp.GenerateSpectrogram(cleanData, fs)
+fxDirty, txDirty, spectrogramDirty = fp.GenerateSpectrogram(dirtyData, fs)
 
-fxDirty, txDirty, spectrogramDirty = signal.spectrogram(dirtyData, fs)
-spectrogramDirty[spectrogramDirty == -np.inf] = 0
-spectrogramDirty = 20 * np.log10(spectrogramDirty)
-spectrogramDirty = spectrogramDirty/np.amax(spectrogramDirty)
-
-times = []
-peaksClean = []
-peaksDirty = []
-window = [10]
-test = []
-
-highpassWc = 5000
-# Shitty highpass
-for i, f in enumerate(fxClean):
-    if f > highpassWc:
-        highpassIndex = i
-        break
-
-for i in range(0, spectrogramClean.shape[1]):
-
-    test.append(np.sum(spectrogramClean[highpassIndex:,i]))
-
-    times.append(i)
-    freqsAtiClean = spectrogramClean[:,i]
-    freqsAtiDirty = spectrogramDirty[:,i]
-    
-    peaksClean.append(signal.find_peaks_cwt(freqsAtiClean, window))
-    peaksDirty.append(signal.find_peaks_cwt(freqsAtiDirty, window))
-
-hmm = [round(t) for t in test]
-hmmAmp = [h * 200 for h in hmm]
-hmmX = txClean[np.arange(0, len(hmm), 1)]
-
-window2 = [1]
-peaks = signal.find_peaks_cwt(hmm, window2)
+timePeaksClean, freqPeaksClean = fp.FindPeaks(spectrogramClean, fxClean, txClean)
+timePeaksDirty, freqPeaksDirty = fp.FindPeaks(spectrogramDirty, fxDirty, txDirty)
 
 if 1:
     plt.figure()
@@ -89,11 +41,9 @@ if 1:
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
     plt.colorbar()
-    plt.plot(hmmX, hmmAmp, '-k')
-    plt.stem(txClean[peaks], [fxClean[60]] * len(txClean[peaks]))
 
-    #for xe, ye in zip(times, peaksClean):
-    #    plt.scatter([txClean[xe]] * len(ye), fxClean[ye], edgecolors='black')
+    for xe, ye in zip(timePeaksClean, freqPeaksClean):
+        plt.scatter([txClean[xe]] * len(ye), fxClean[ye], edgecolors='black')
 
     plt.title('Clean spectrogram')
 
@@ -103,8 +53,8 @@ if 1:
     plt.xlabel('Time [sec]')
     plt.colorbar()
 
-    #for xe, ye in zip(times, peaksDirty):
-    #    plt.scatter([txDirty[xe]] * len(ye), fxDirty[ye], edgecolors='black')
+    for xe, ye in zip(timePeaksDirty, freqPeaksDirty):
+        plt.scatter([txDirty[xe]] * len(ye), fxDirty[ye], edgecolors='black')
     
     plt.title('Dirty spectrogram')
     plt.tight_layout()

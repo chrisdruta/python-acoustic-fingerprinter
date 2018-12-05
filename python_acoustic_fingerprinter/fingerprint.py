@@ -1,6 +1,8 @@
 from scipy import signal
 from scipy.io import wavfile
 
+import numpy as np
+
 import hashlib
 
 def _binaryEncode(string):
@@ -17,20 +19,46 @@ def _binaryEncode(string):
     """
     return ' '.join(map(bin, bytearray(string, encoding='utf-8')))
 
-def FindPeaks(spectogram, fx, tx):
+def FindPeaks(spectrogram, fx, tx):
     """
-    Finds frequncy peaks and for each significant time delta
+    Finds frequncy peaks and signifcant time delta peaks
 
     Args:
-        spectogram: spectogram of audio data (1 channel)
+        spectrogram: spectrogram of audio data (1 channel)
         fx: a vector of frequency bins,
         tx: vector of time bins
 
     Returns:
-        vector of binned peaks,
-        vector of significant time deltas
+        vector of significant time delta peak indices
+        vector of frequency peaks for each time delta
     """
-    pass
+
+    # Shitty high pass
+    highpassWc = 5000
+    highpassIndex = -1
+    for i, f in enumerate(fx):
+        if f > highpassWc:
+            highpassIndex = i
+            break
+
+    if highpassIndex == -1:
+        raise RuntimeError('Frequency vector doesn\'t span high enough')
+
+    # Sum up spectrogram values for frequiences above highpassWc for each time slice of STFT
+    freqMagSums = [np.sum(spectrogram[highpassIndex:, i]) for i in range(0, spectrogram.shape[1])]
+    
+    # Continuous Wavelet Transform to find peaks for time axis
+    windowTime = [1]
+    timePeaks = signal.find_peaks_cwt(freqMagSums, windowTime)
+
+    # Continuous Wavelet Transform to find frequency peaks for each time peak
+    freqPeaks = []
+    windowFreq = [5]
+    for peakIndex in timePeaks:
+        freqsAtTime = spectrogram[:,peakIndex]
+        freqPeaks.append(signal.find_peaks_cwt(freqsAtTime, windowFreq))
+    
+    return timePeaks, freqPeaks 
 
 def GenerateHash(peakFreqs, peakTDeltas):
     """
@@ -50,9 +78,9 @@ def GenerateHash(peakFreqs, peakTDeltas):
 
     return fingerprintHash
 
-def GetSpectogram(data, fs):
+def GenerateSpectrogram(data, fs):
     """
-    Generate and cleanse spectogram of an audio clip.
+    Generate and cleanse spectrogram of an audio clip.
 
     Args:
         data: raw audio data
@@ -61,9 +89,15 @@ def GetSpectogram(data, fs):
     Returns:
         fx, a vector of frequency bins,
         tx, vector of time bins,
-        2d array containing spectogram data (of 1 channel) mapped by fx & tx
+        2d array containing spectrogram data (of 1 channel) mapped by fx & tx
     
     Raises:
         Execption for audio data of greater than 2 channels
     """
-    pass
+    fx, tx, spectrogram = signal.spectrogram(data, fs)
+
+    spectrogram[spectrogram == -np.inf] = 0
+    spectrogram = 20 * np.log10(spectrogram)
+    spectrogram = spectrogram/np.amax(spectrogram)
+
+    return fx, tx, spectrogram
