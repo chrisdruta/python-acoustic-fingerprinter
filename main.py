@@ -23,7 +23,7 @@ cleanData = cleanData[int(len(cleanData)/2):int(len(cleanData)/2 + clipDuration 
 noise = wavfile.read('noise.wav')[1]
 noise = noise[int(len(noise)/2): int(len(noise)/2) + clipDuration * fs]
 
-dirtyData = cleanData * 0.1 + noise * 2
+dirtyData = cleanData * 1 + noise * 2
 dirtyData = dirtyData.astype(np.int16)
 #sd.play(dirtyData, fs)
 
@@ -43,7 +43,13 @@ tPeakValsDirty = txDirty[timePeaksDirty]
 cleanHashes = fp.GenerateHash(fPeakValsClean, tPeakValsClean)
 dirtyHashes = fp.GenerateHash(fPeakValsDirty, tPeakValsDirty)
 
-fp.FindMatches(cleanHashes, None)
+knownSong = {
+    'id': 0,
+    'offset': txClean[-1],
+    'hashes': list(cleanHashes)
+}
+
+fp.FindMatches(dirtyHashes, knownSong)
 
 if 0:
     plt.figure()

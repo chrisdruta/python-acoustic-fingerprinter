@@ -1,9 +1,21 @@
+import hashlib
+import warnings
+
 from scipy import signal
 from scipy.io import wavfile
 
 import numpy as np
 
-import hashlib
+def _hideWarnings(func):
+    """
+    Decorator function that hides annoying deprecation warnings in find_peaks_cwt
+    """
+    def func_wrapper(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return func(*args, **kwargs)
+
+    return func_wrapper
 
 def GenerateSpectrogram(data, fs):
     """
@@ -29,6 +41,7 @@ def GenerateSpectrogram(data, fs):
 
     return fx, tx, spectrogram
 
+@_hideWarnings
 def FindPeaks(spectrogram, fx, tx):
     """
     Finds frequncy peaks and signifcant time delta peaks
@@ -70,7 +83,7 @@ def FindPeaks(spectrogram, fx, tx):
     
     return timePeaks, freqPeaks 
 
-def GenerateHash(peakFreqs, peakTDeltas=None):
+def GenerateHash(peakFreqs, peakTDeltas):
     """
     Hashes data containing audio clip fingerprint
 
@@ -110,10 +123,16 @@ def FindMatches(hashes, knownSong):
     Returns:
         True if match is found, False if not
     """
+
     mapper = {}
     for hash, offset in hashes:
         mapper[hash.upper()] = offset
     
-    values = mapper.keys()
+    songHashes = [hash[0].upper() for hash in knownSong['hashes']]
 
-    
+    matches = []
+    for hash in mapper.keys():
+        if hash in songHashes:
+            matches.append((knownSong['id'], knownSong['offset'] - mapper[hash]))
+
+    print(matches)
