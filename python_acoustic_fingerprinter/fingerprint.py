@@ -34,8 +34,8 @@ def GenerateSpectrogram(data, fs):
         Execption for audio data of greater than 2 channels
     """
     fx, tx, spectrogram = signal.spectrogram(data, fs)
-
-    spectrogram[spectrogram == -np.inf] = 0
+    # Could cause mucho trouble in magFraq
+    spectrogram[spectrogram == 0] = 0.001
     spectrogram = 20 * np.log10(spectrogram)
     spectrogram = spectrogram/np.amax(spectrogram)
 
@@ -68,19 +68,29 @@ def FindPeaks(spectrogram, fx, tx):
         raise RuntimeError('Frequency vector doesn\'t span high enough')
 
     # Sum up spectrogram values for frequiences above highpassWc for each time slice of STFT
-    freqMagSums = [np.sum(spectrogram[highpassIndex:, i]) for i in range(0, spectrogram.shape[1])]
+    freqMagSums = np.asarray([np.sum(spectrogram[highpassIndex:, i]) for i in range(0, spectrogram.shape[1])])
+    freqMagSums[freqMagSums == -np.inf] = 0
     
     # Continuous Wavelet Transform to find peaks for time axis
-    windowTime = [5]
+    windowTime = [1]
     timePeaks = signal.find_peaks_cwt(freqMagSums, windowTime)
 
     # Continuous Wavelet Transform to find frequency peaks for each time peak
     freqPeaks = []
     windowFreq = [10]
-    for peakIndex in timePeaks:
+
+    badTimePeaks = []
+
+    for i, peakIndex in enumerate(timePeaks):
         freqsAtTime = spectrogram[:,peakIndex]
-        freqPeaks.append(signal.find_peaks_cwt(freqsAtTime, windowFreq))
-    
+        freqPeaksAtTime = signal.find_peaks_cwt(freqsAtTime, windowFreq)
+
+        if freqPeaksAtTime.size != 0:
+            freqPeaks.append(freqPeaksAtTime)
+        else:
+            badTimePeaks.append(i)
+
+    timePeaks = np.delete(timePeaks, badTimePeaks)
     return timePeaks, freqPeaks 
 
 def GenerateHash(peakFreqs, peakTDeltas):
@@ -109,7 +119,7 @@ def GenerateHash(peakFreqs, peakTDeltas):
                 timeDelta = t2 - t1
 
                 if timeDelta >= MIN_HASH_TIME_DELTA and timeDelta <= MAX_HASH_TIME_DELTA:
-                    freqHash = hashlib.sha1(f"${f1}|${f2}|${timeDelta}".encode()).hexdigest()
+                    freqHash = hashlib.sha1(f"{f1}|{f2}|{timeDelta}".encode()).hexdigest()
                     yield (freqHash[0:20], t1)
 
 def FindMatches(hashes, knownSong):
@@ -126,9 +136,9 @@ def FindMatches(hashes, knownSong):
 
     mapper = {}
     for hash, offset in hashes:
-        mapper[hash.upper()] = offset
+        mapper[hash] = offset
     
-    songHashes = [hash[0].upper() for hash in knownSong['hashes']]
+    songHashes = [hash[0] for hash in knownSong['hashes']]
 
     matches = []
     for hash in mapper.keys():
