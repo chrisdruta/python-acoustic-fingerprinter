@@ -5,20 +5,6 @@ import numpy as np
 
 import hashlib
 
-def _binaryEncode(string):
-    """
-    Helper function to encode a string into bytes for hashing
-    Taken from: https://stackoverflow.com/questions/18815820/convert-string-to-binary-in-python
-    (Author: Ben)
-
-    Args:
-        string: input string to be byte encoded
-
-    Returns:
-        utf-8 byte encoded input string
-    """
-    return ' '.join(map(bin, bytearray(string, encoding='utf-8')))
-
 def FindPeaks(spectrogram, fx, tx):
     """
     Finds frequncy peaks and signifcant time delta peaks
@@ -48,12 +34,12 @@ def FindPeaks(spectrogram, fx, tx):
     freqMagSums = [np.sum(spectrogram[highpassIndex:, i]) for i in range(0, spectrogram.shape[1])]
     
     # Continuous Wavelet Transform to find peaks for time axis
-    windowTime = [1]
+    windowTime = [5]
     timePeaks = signal.find_peaks_cwt(freqMagSums, windowTime)
 
     # Continuous Wavelet Transform to find frequency peaks for each time peak
     freqPeaks = []
-    windowFreq = [5]
+    windowFreq = [10]
     for peakIndex in timePeaks:
         freqsAtTime = spectrogram[:,peakIndex]
         freqPeaks.append(signal.find_peaks_cwt(freqsAtTime, windowFreq))
@@ -71,12 +57,23 @@ def GenerateHash(peakFreqs, peakTDeltas):
     Returns:
         String of hash containing audio clip fingerprint
     """
-    toHash = f"{peakFreqs}{peakTDeltas}"
+    MIN_HASH_TIME_DELTA = 0
+    MAX_HASH_TIME_DELTA = 200
+    FAN_VALUE = 5
 
-    fingerprintHash = hashlib.sha1(_binaryEncode(toHash)).hexdigest()
-    fingerprintHash = fingerprintHash[0:len(fingerprintHash)/2]
+    for i in range(len(peakFreqs)):
+        for j in range(1, FAN_VALUE):
 
-    return fingerprintHash
+            if i + j < len(peakFreqs):
+                f1 = peakFreqs[i]
+                f2 = peakFreqs[i + j]
+                t1 = peakTDeltas[i]
+                t2 = peakTDeltas[i + j]
+                timeDelta = t2 - t1
+
+                if timeDelta >= MIN_HASH_TIME_DELTA and timeDelta <= MAX_HASH_TIME_DELTA:
+                    freqHash = hashlib.sha1(f"${f1}|${f2}|${timeDelta}".encode()).hexdigest()
+                    yield (freqHash[0:20], t1)
 
 def GenerateSpectrogram(data, fs):
     """

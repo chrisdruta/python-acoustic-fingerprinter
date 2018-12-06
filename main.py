@@ -23,15 +23,28 @@ cleanData = cleanData[int(len(cleanData)/2):int(len(cleanData)/2 + clipDuration 
 noise = wavfile.read('noise.wav')[1]
 noise = noise[int(len(noise)/2): int(len(noise)/2) + clipDuration * fs]
 
-dirtyData = cleanData * 0.1 + noise * 5
+dirtyData = cleanData * 0.1 + noise * 2
 dirtyData = dirtyData.astype(np.int16)
-sd.play(dirtyData, fs)
+#sd.play(dirtyData, fs)
 
 fxClean, txClean, spectrogramClean = fp.GenerateSpectrogram(cleanData, fs)
 fxDirty, txDirty, spectrogramDirty = fp.GenerateSpectrogram(dirtyData, fs)
 
 timePeaksClean, freqPeaksClean = fp.FindPeaks(spectrogramClean, fxClean, txClean)
 timePeaksDirty, freqPeaksDirty = fp.FindPeaks(spectrogramDirty, fxDirty, txDirty)
+
+# Peaks given in indices, get the actual values
+fPeakValsClean = [fxClean[i] for i in freqPeaksClean]
+tPeakValsClean = txClean[timePeaksClean]
+
+fPeakValsDirty = [fxDirty[i] for i in freqPeaksDirty]
+tPeakValsDirty = txDirty[timePeaksDirty]
+
+cleanHashes = fp.GenerateHash(fPeakValsClean, tPeakValsClean)
+dirtyHashes = fp.GenerateHash(fPeakValsDirty, tPeakValsDirty)
+
+print(len(list(cleanHashes)))
+print(len(list(dirtyHashes)))
 
 if 1:
     plt.figure()
