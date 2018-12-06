@@ -5,6 +5,30 @@ import numpy as np
 
 import hashlib
 
+def GenerateSpectrogram(data, fs):
+    """
+    Generate and cleanse spectrogram of an audio clip.
+
+    Args:
+        data: raw audio data
+        fs: sampling frequency of the data
+
+    Returns:
+        fx, a vector of frequency bins,
+        tx, vector of time bins,
+        2d array containing spectrogram data (of 1 channel) mapped by fx & tx
+    
+    Raises:
+        Execption for audio data of greater than 2 channels
+    """
+    fx, tx, spectrogram = signal.spectrogram(data, fs)
+
+    spectrogram[spectrogram == -np.inf] = 0
+    spectrogram = 20 * np.log10(spectrogram)
+    spectrogram = spectrogram/np.amax(spectrogram)
+
+    return fx, tx, spectrogram
+
 def FindPeaks(spectrogram, fx, tx):
     """
     Finds frequncy peaks and signifcant time delta peaks
@@ -46,7 +70,7 @@ def FindPeaks(spectrogram, fx, tx):
     
     return timePeaks, freqPeaks 
 
-def GenerateHash(peakFreqs, peakTDeltas):
+def GenerateHash(peakFreqs, peakTDeltas=None):
     """
     Hashes data containing audio clip fingerprint
 
@@ -75,26 +99,21 @@ def GenerateHash(peakFreqs, peakTDeltas):
                     freqHash = hashlib.sha1(f"${f1}|${f2}|${timeDelta}".encode()).hexdigest()
                     yield (freqHash[0:20], t1)
 
-def GenerateSpectrogram(data, fs):
+def FindMatches(hashes, knownSong):
     """
-    Generate and cleanse spectrogram of an audio clip.
+    Detects matches from sample hashes with hashes in known song(s)
 
     Args:
-        data: raw audio data
-        fs: sampling frequency of the data
+        hashes: sequence of tuples containing a hash and it's offset
+        knownSong: dictionary contating song information
 
     Returns:
-        fx, a vector of frequency bins,
-        tx, vector of time bins,
-        2d array containing spectrogram data (of 1 channel) mapped by fx & tx
-    
-    Raises:
-        Execption for audio data of greater than 2 channels
+        True if match is found, False if not
     """
-    fx, tx, spectrogram = signal.spectrogram(data, fs)
+    mapper = {}
+    for hash, offset in hashes:
+        mapper[hash.upper()] = offset
+    
+    values = mapper.keys()
 
-    spectrogram[spectrogram == -np.inf] = 0
-    spectrogram = 20 * np.log10(spectrogram)
-    spectrogram = spectrogram/np.amax(spectrogram)
-
-    return fx, tx, spectrogram
+    

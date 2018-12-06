@@ -43,10 +43,9 @@ tPeakValsDirty = txDirty[timePeaksDirty]
 cleanHashes = fp.GenerateHash(fPeakValsClean, tPeakValsClean)
 dirtyHashes = fp.GenerateHash(fPeakValsDirty, tPeakValsDirty)
 
-print(len(list(cleanHashes)))
-print(len(list(dirtyHashes)))
+fp.FindMatches(cleanHashes, None)
 
-if 1:
+if 0:
     plt.figure()
 
     plt.subplot(211)
