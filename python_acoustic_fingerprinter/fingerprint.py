@@ -28,7 +28,7 @@ def Fingerprint(samples, fs):
     Returns:
         List of hashe tuples in the form (hash, offset)
     """
-    fx, tx = GenerateSpectrogram(samples, fs)
+    fx, tx, spectrogram = GenerateSpectrogram(samples, fs)
     timePeaks, freqPeaks = FindPeaks(spectrogram, fx, tx)
 
     # Peaks given in indices, get the actual values for hashing
@@ -141,27 +141,30 @@ def GenerateHash(peakFreqs, peakTDeltas):
                     freqHash = hashlib.sha1(f"{str(f1).replace(' ','')}|{str(f2).replace(' ','')}|{timeDelta}".encode()).hexdigest()
                     yield (freqHash[0:20], t1)
 
-def FindMatches(hashes, knownSong):
+def FindMatches(hashes, knownSongList):
     """
     Detects matches from sample hashes with hashes in known song(s)
 
     Args:
         hashes: sequence of tuples containing a hash and it's offset
-        knownSong: dictionary contating song information
+        knownSongList: list of dictionarys contating song information
 
     Returns:
         list of tuples containing match info such as (songId, relative offset)
     """
-    mapper = {}
+    inputMapper = {}
     for hash, offset in hashes:
-        mapper[hash] = offset
+        inputMapper[hash] = offset
     
-    songHashes = [hash[0] for hash in knownSong['hashes']]
-
     matches = []
-    for hash in mapper.keys():
-        if hash in songHashes:
-            matches.append((knownSong['id'], knownSong['offset'] - mapper[hash]))
+    for song in knownSongList:
+        songMapper = {}
+        for hash, offset in song['hashes']:
+            songMapper[hash] = offset
+
+        for hash in inputMapper.keys():
+            if hash in songMapper.keys():
+                matches.append((song['id'], songMapper[hash] - inputMapper[hash]))
 
     return matches
 
