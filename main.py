@@ -6,14 +6,14 @@ from scipy.io import wavfile
 import sounddevice as sd
 sd.default.device = 7
 
-from python_acoustic_fingerprinter import fingerprint as fp
+import fingerprint as fp
 
 # Reading in files
-fs, song1 = wavfile.read('spacejam.wav')
+fs, song1 = wavfile.read('sounds/spacejam.wav')
 
-song1 = song1[:, 0] # Left channel
-song2 = wavfile.read('ghostslammers.wav')[1] # Already mono
-noise = wavfile.read('noise.wav')[1] # Already mono
+song1 = song1[:, 0] # Left channel to make mono
+song2 = wavfile.read('sounds/ghostslammers.wav')[1] # Already mono
+noise = wavfile.read('sounds/noise.wav')[1] # Already mono
 
 # Generating clips to try to match (test)
 clipDuration = 5
