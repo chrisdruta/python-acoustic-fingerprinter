@@ -74,7 +74,7 @@ def FindPeaks(spectrogram, fx, tx):
     timePeaks = signal.find_peaks_cwt(freqMagSums, windowTime)
 
     # Continuous Wavelet Transform to find frequency peaks for each time peak
-    freqPeaks = []#0] * (highpassIndex - 1)
+    freqPeaks = []
     badTimePeaks = []
     windowFreq = [10]
 
@@ -85,7 +85,6 @@ def FindPeaks(spectrogram, fx, tx):
 
         # Case for no peaks found at this time peak
         if freqPeaksAtTime.size != 0:
-            
             freqPeaks.append([freqIndex + highpassIndex for freqIndex in freqPeaksAtTime])
         else:
             badTimePeaks.append(i)
@@ -131,7 +130,7 @@ def FindMatches(hashes, knownSong):
         knownSong: dictionary contating song information
 
     Returns:
-        True if match is found, False if not
+        list of tuples containing match info such as (songId, relative offset)
     """
     mapper = {}
     for hash, offset in hashes:
@@ -144,4 +143,32 @@ def FindMatches(hashes, knownSong):
         if hash in songHashes:
             matches.append((knownSong['id'], knownSong['offset'] - mapper[hash]))
 
-    print(matches)
+    return matches
+
+def AlignMatches(matches):
+    """
+    Tallys up each dif's song id frequency and returns the song id with highest count diff
+
+    Args:
+        matches: list of tuples containing (song id, relative offset) matched from known song
+
+    Returns:
+        songId (int)
+    """
+    diffMap = {}
+    largestCount = 0
+    songId = -1
+    for sid, diff in matches:
+        if diff not in diffMap:
+            diffMap[diff] = {}
+        if sid not in diffMap[diff]:
+            diffMap[diff][sid] = 0
+
+        diffMap[diff][sid] += 1
+
+        if diffMap[diff][sid] > largestCount:
+            largestCount = diffMap[diff][sid]
+            songId = sid
+
+    return songId
+    

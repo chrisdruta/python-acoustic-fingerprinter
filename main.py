@@ -14,17 +14,20 @@ sd.default.device = 7
 
 from python_acoustic_fingerprinter import fingerprint as fp
 
-clipDuration = 10
+clipDuration = 5
 
 fs, cleanData = wavfile.read('spacejam.wav')
 cleanData = cleanData[:, 0] # Left channel
-cleanClipData = cleanData[int(len(cleanData)/2):int(len(cleanData)/2 + clipDuration * fs)]
-#cleanData = cleanClipData
+cleanClipData = cleanData[int(len(cleanData)/2) - fs * clipDuration:int(len(cleanData)/2)]
+
+# Toggle for fast finger print fine tuning
+if 1:
+    cleanData = cleanClipData
 
 noise = wavfile.read('noise.wav')[1]
 noise = noise[int(len(noise)/2): int(len(noise)/2) + clipDuration * fs]
 
-dirtyData = cleanClipData * 1# + noise * 1
+dirtyData = cleanClipData * 0.5 + noise * 10
 dirtyData = dirtyData.astype(np.int16)
 #sd.play(dirtyData, fs)
 
@@ -49,11 +52,14 @@ test2 = list(dirtyHashes)
 
 knownSong = {
     'id': 0,
+    'title': 'Space Jam',
     'offset': 0,#txClean[-1],
     'hashes': test1
 }
 
-fp.FindMatches(test2, knownSong)
+matches = fp.FindMatches(test2, knownSong)
+
+print(fp.AlignMatches(matches))
 
 if 1:
     plt.figure()
