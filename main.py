@@ -47,9 +47,6 @@ dirtyHashes = fp.GenerateHash(fPeakValsDirty, tPeakValsDirty)
 test1 = list(cleanHashes)
 test2 = list(dirtyHashes)
 
-print(len(test1))
-print(len(test2))
-
 knownSong = {
     'id': 0,
     'offset': 0,#txClean[-1],

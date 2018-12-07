@@ -67,25 +67,26 @@ def FindPeaks(spectrogram, fx, tx):
         raise RuntimeError('Frequency vector doesn\'t span high enough')
 
     # Sum up spectrogram values for frequiences above highpassWc for each time slice of STFT
-    freqMagSums = np.asarray([np.sum(spectrogram[highpassIndex:, i]) for i in range(0, spectrogram.shape[1])])
-    freqMagSums[freqMagSums == -np.inf] = 0
+    freqMagSums = np.asarray([np.sum(spectrogram[highpassIndex:, i]) for i in range(spectrogram.shape[1])])
     
     # Continuous Wavelet Transform to find peaks for time axis
     windowTime = [1]
     timePeaks = signal.find_peaks_cwt(freqMagSums, windowTime)
 
     # Continuous Wavelet Transform to find frequency peaks for each time peak
-    freqPeaks = []
-    windowFreq = [10]
-
+    freqPeaks = []#0] * (highpassIndex - 1)
     badTimePeaks = []
+    windowFreq = [10]
 
     for i, peakIndex in enumerate(timePeaks):
         freqsAtTime = spectrogram[highpassIndex:,peakIndex]
+        
         freqPeaksAtTime = signal.find_peaks_cwt(freqsAtTime, windowFreq)
 
+        # Case for no peaks found at this time peak
         if freqPeaksAtTime.size != 0:
-            freqPeaks.append(freqPeaksAtTime)
+            
+            freqPeaks.append([freqIndex + highpassIndex for freqIndex in freqPeaksAtTime])
         else:
             badTimePeaks.append(i)
 
@@ -106,10 +107,6 @@ def GenerateHash(peakFreqs, peakTDeltas):
     MIN_HASH_TIME_DELTA = 0
     MAX_HASH_TIME_DELTA = 5
     FAN_VALUE = 50
-
-    print(len(peakFreqs))
-
-    #quit()
 
     for i in range(len(peakFreqs)):
         for j in range(1, FAN_VALUE):
