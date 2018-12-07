@@ -56,7 +56,7 @@ def FindPeaks(spectrogram, fx, tx):
         vector of frequency peaks for each time delta
     """
     # Shitty high pass
-    highpassWc = 5000
+    highpassWc = 4000
     highpassIndex = -1
     for i, f in enumerate(fx):
         if f > highpassWc:
@@ -81,7 +81,7 @@ def FindPeaks(spectrogram, fx, tx):
     badTimePeaks = []
 
     for i, peakIndex in enumerate(timePeaks):
-        freqsAtTime = spectrogram[:,peakIndex]
+        freqsAtTime = spectrogram[highpassIndex:,peakIndex]
         freqPeaksAtTime = signal.find_peaks_cwt(freqsAtTime, windowFreq)
 
         if freqPeaksAtTime.size != 0:
