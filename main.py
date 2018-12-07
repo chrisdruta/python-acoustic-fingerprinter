@@ -1,65 +1,60 @@
 #!/bin/python
 import numpy as np
 
+from scipy.io import wavfile
+
 import matplotlib
 matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
-
-from scipy import stats
-from scipy import signal
-from scipy.io import wavfile
 
 import sounddevice as sd
 sd.default.device = 7
 
 from python_acoustic_fingerprinter import fingerprint as fp
 
+# Reading in files
+fs, song1 = wavfile.read('spacejam.wav')
+
+song1 = song1[:, 0] # Left channel
+song2 = wavfile.read('ghostslammers.wav')[1] # Already mono
+noise = wavfile.read('noise.wav')[1] # Already mono
+
+# Generating clips to try to match (test)
 clipDuration = 5
+clipMultiplier = 0.5
+noiseMultiplier = 10
 
-fs, cleanData = wavfile.read('spacejam.wav')
-cleanData = cleanData[:, 0] # Left channel
-cleanClipData = cleanData[int(len(cleanData)/2) - fs * clipDuration:int(len(cleanData)/2)]
+clip1 = song1[int(len(song1)/2) - fs * clipDuration:int(len(song1)/2)]
+clip2 = song1[int(len(song1)/4): int(len(song1)/4) + fs * clipDuration]
+clip3 = song2[int(len(song2)/2) - fs * clipDuration:int(len(song2)/2)]
+clip4 = song2[int(len(song2)/4): int(len(song2)/4) + fs * clipDuration]
 
-# Toggle for fast finger print fine tuning
-if 1:
-    cleanData = cleanClipData
+noiseClip1 = noise[int(len(noise)/2): int(len(noise)/2) + clipDuration * fs]
+noiseClip2 = noise[int(len(noise)/2) - clipDuration * fs: int(len(noise)/2)]
 
-noise = wavfile.read('noise.wav')[1]
-noise = noise[int(len(noise)/2): int(len(noise)/2) + clipDuration * fs]
+addNoise = lambda c, n: np.asarray(c * clipMultiplier + n * noiseMultiplier).astype(np.int16)
 
-dirtyData = cleanClipData * 0.5 + noise * 10
-dirtyData = dirtyData.astype(np.int16)
-#sd.play(dirtyData, fs)
+clip1 = addNoise(clip1, noiseClip1)
+clip2 = addNoise(clip2, noiseClip2)
+clip3 = addNoise(clip3, noiseClip2)
+clip4 = addNoise(clip4, noiseClip1)
 
-fxClean, txClean, spectrogramClean = fp.GenerateSpectrogram(cleanData, fs)
-fxDirty, txDirty, spectrogramDirty = fp.GenerateSpectrogram(dirtyData, fs)
+#sd.play(clip1, fs)
 
-timePeaksClean, freqPeaksClean = fp.FindPeaks(spectrogramClean, fxClean, txClean)
-timePeaksDirty, freqPeaksDirty = fp.FindPeaks(spectrogramDirty, fxDirty, txDirty)
-
-# Peaks given in indices, get the actual values
-fPeakValsClean = [fxClean[i] for i in freqPeaksClean]
-tPeakValsClean = txClean[timePeaksClean]
-
-fPeakValsDirty = [fxDirty[i] for i in freqPeaksDirty]
-tPeakValsDirty = txDirty[timePeaksDirty]
-
-cleanHashes = fp.GenerateHash(fPeakValsClean, tPeakValsClean)
-dirtyHashes = fp.GenerateHash(fPeakValsDirty, tPeakValsDirty)
-
-test1 = list(cleanHashes)
-test2 = list(dirtyHashes)
-
-knownSong = {
-    'id': 0,
-    'title': 'Space Jam',
-    'offset': 0,#txClean[-1],
-    'hashes': test1
-}
-
-matches = fp.FindMatches(test2, knownSong)
-
-print(fp.AlignMatches(matches))
+songList = [
+    {
+        'songId': 1,
+        'title': 'Space Jam',
+        'offset': 0,
+        'hashes': fp.Fingerprint(song1, fs)
+    },
+    {
+        'songId': 2,
+        'title': 'Ghost Slammers',
+        'offset': 0,
+        'hashes': fp.Fingerprint(song2, fs)
+    }
+]
 
 if 1:
     plt.figure()

@@ -17,6 +17,26 @@ def _hideWarnings(func):
 
     return func_wrapper
 
+def Fingerprint(samples, fs):
+    """
+    Fingerprint all samples at given fs
+
+    Args:
+        samples: mono channel raw wav data
+        fs: sampling frequency used for data
+
+    Returns:
+        List of hashe tuples in the form (hash, offset)
+    """
+    fx, tx = GenerateSpectrogram(samples, fs)
+    timePeaks, freqPeaks = FindPeaks(spectrogram, fx, tx)
+
+    # Peaks given in indices, get the actual values for hashing
+    freqPeakVals = [fx[i] for i in freqPeaks]
+    timePeakVals = tx[timePeaks]
+
+    return list(GenerateHash(freqPeakVals, timePeakVals))
+
 def GenerateSpectrogram(data, fs):
     """
     Generate and cleanse spectrogram of an audio clip.
@@ -97,11 +117,11 @@ def GenerateHash(peakFreqs, peakTDeltas):
     Hashes data containing audio clip fingerprint
 
     Args:
-        peakFreqs: blah
-        peakTDeltas: blah blah
+        peakFreqs: peak frequency values for each time slice
+        peakTDeltas: peak time values that frequency peaks were evaluated at
     
     Returns:
-        String of hash containing audio clip fingerprint
+        List of hashe tuples in the form (hash, offset)
     """
     MIN_HASH_TIME_DELTA = 0
     MAX_HASH_TIME_DELTA = 5
@@ -171,4 +191,3 @@ def AlignMatches(matches):
             songId = sid
 
     return songId
-    
