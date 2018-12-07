@@ -3,10 +3,6 @@ import numpy as np
 
 from scipy.io import wavfile
 
-import matplotlib
-matplotlib.use('Qt5Agg')
-import matplotlib.pyplot as plt
-
 import sounddevice as sd
 sd.default.device = 7
 
@@ -75,31 +71,3 @@ if 1:
     test(fp2, 'clip2', songList)
     test(fp3, 'clip3', songList)
     test(fp4, 'clip4', songList)
-
-# Toggle graphs
-if 0:
-    plt.figure()
-
-    plt.subplot(211)
-    plt.pcolormesh(txClean, fxClean, spectrogramClean)
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [sec]')
-    plt.colorbar()
-
-    for xe, ye in zip(timePeaksClean, freqPeaksClean):
-        plt.scatter([txClean[xe]] * len(ye), fxClean[ye], edgecolors='black')
-
-    plt.title('Clean spectrogram')
-
-    plt.subplot(212)
-    plt.pcolormesh(txDirty, fxDirty, spectrogramDirty)
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [sec]')
-    plt.colorbar()
-
-    for xe, ye in zip(timePeaksDirty, freqPeaksDirty):
-        plt.scatter([txDirty[xe]] * len(ye), fxDirty[ye], edgecolors='black')
-    
-    plt.title('Dirty spectrogram')
-    plt.tight_layout()
-    plt.show()

@@ -6,6 +6,10 @@ from scipy.io import wavfile
 
 import numpy as np
 
+import matplotlib
+matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
+
 def _hideWarnings(func):
     """
     Decorator function that hides annoying deprecation warnings in find_peaks_cwt
@@ -17,13 +21,14 @@ def _hideWarnings(func):
 
     return func_wrapper
 
-def Fingerprint(samples, fs):
+def Fingerprint(samples, fs, graph=False, name=None):
     """
     Fingerprint all samples at given fs
 
     Args:
         samples: mono channel raw wav data
         fs: sampling frequency used for data
+        graph: boolean indicating whether to graph fingerprint
 
     Returns:
         List of hashe tuples in the form (hash, offset)
@@ -34,6 +39,25 @@ def Fingerprint(samples, fs):
     # Peaks given in indices, get the actual values for hashing
     freqPeakVals = [fx[i] for i in freqPeaks]
     timePeakVals = tx[timePeaks]
+
+    if graph:
+        plt.figure()
+
+        plt.pcolormesh(tx, fx, spectrogram)
+        plt.ylabel('Frequency [Hz]')
+        plt.xlabel('Time [sec]')
+        plt.colorbar()
+
+        for xe, ye in zip(timePeaks, freqPeaks):
+            plt.scatter([tx[xe]] * len(ye), fx[ye], edgecolors='black')
+        
+        if name:
+            plt.title("Fingerprinted Spectrogram")
+        else:
+            plt.title(f"Fingerprinted Spectrogram for {name}")
+
+        plt.tight_layout()
+        plt.show()
 
     return list(GenerateHash(freqPeakVals, timePeakVals))
 
