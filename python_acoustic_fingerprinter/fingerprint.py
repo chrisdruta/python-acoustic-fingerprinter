@@ -35,7 +35,7 @@ def GenerateSpectrogram(data, fs):
     """
     fx, tx, spectrogram = signal.spectrogram(data, fs)
     # Could cause mucho trouble in magFraq
-    spectrogram[spectrogram == 0] = 0.001
+    spectrogram[spectrogram == 0] = 0.0001
     spectrogram = 20 * np.log10(spectrogram)
     spectrogram = spectrogram/np.amax(spectrogram)
 
@@ -55,7 +55,6 @@ def FindPeaks(spectrogram, fx, tx):
         vector of significant time delta peak indices
         vector of frequency peaks for each time delta
     """
-
     # Shitty high pass
     highpassWc = 5000
     highpassIndex = -1
@@ -105,8 +104,12 @@ def GenerateHash(peakFreqs, peakTDeltas):
         String of hash containing audio clip fingerprint
     """
     MIN_HASH_TIME_DELTA = 0
-    MAX_HASH_TIME_DELTA = 200
-    FAN_VALUE = 5
+    MAX_HASH_TIME_DELTA = 5
+    FAN_VALUE = 50
+
+    print(len(peakFreqs))
+
+    #quit()
 
     for i in range(len(peakFreqs)):
         for j in range(1, FAN_VALUE):
@@ -119,7 +122,7 @@ def GenerateHash(peakFreqs, peakTDeltas):
                 timeDelta = t2 - t1
 
                 if timeDelta >= MIN_HASH_TIME_DELTA and timeDelta <= MAX_HASH_TIME_DELTA:
-                    freqHash = hashlib.sha1(f"{f1}|{f2}|{timeDelta}".encode()).hexdigest()
+                    freqHash = hashlib.sha1(f"{str(f1).replace(' ','')}|{str(f2).replace(' ','')}|{timeDelta}".encode()).hexdigest()
                     yield (freqHash[0:20], t1)
 
 def FindMatches(hashes, knownSong):
@@ -133,7 +136,6 @@ def FindMatches(hashes, knownSong):
     Returns:
         True if match is found, False if not
     """
-
     mapper = {}
     for hash, offset in hashes:
         mapper[hash] = offset
