@@ -166,7 +166,7 @@ def FindMatches(hashes, knownSongList):
             if hash in songMapper.keys():
                 matches.append((song['id'], songMapper[hash] - inputMapper[hash]))
 
-    return matches
+    return AlignMatches(matches)
 
 def AlignMatches(matches):
     """

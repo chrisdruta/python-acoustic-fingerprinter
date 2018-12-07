@@ -39,7 +39,9 @@ clip2 = addNoise(clip2, noiseClip2)
 clip3 = addNoise(clip3, noiseClip2)
 clip4 = addNoise(clip4, noiseClip1)
 
-#sd.play(clip1, fs)
+# Toggle playing a clip back
+if 0:
+    sd.play(clip1, fs)
 
 songList = [
     {
@@ -56,7 +58,26 @@ songList = [
     }
 ]
 
+# Fingerprinting clips
+fp1 = fp.Fingerprint(clip1, fs)
+fp2 = fp.Fingerprint(clip2, fs)
+fp3 = fp.Fingerprint(clip3, fs)
+fp4 = fp.Fingerprint(clip4, fs)
+
+def test(clip, name, songList):
+    print(f"Matching {name}....")
+    result = fp.FindMatches(clip, songList)
+    print(f"Matched with {songList[result + 1]['title']}" if result != -1 else 'Failed to match')
+
+# Toggle tests
 if 1:
+    test(fp1, 'clip1', songList)
+    test(fp2, 'clip2', songList)
+    test(fp3, 'clip3', songList)
+    test(fp4, 'clip4', songList)
+
+# Toggle graphs
+if 0:
     plt.figure()
 
     plt.subplot(211)
