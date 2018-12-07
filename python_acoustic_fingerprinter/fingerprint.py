@@ -188,7 +188,7 @@ def FindMatches(hashes, knownSongList):
 
         for hash in inputMapper.keys():
             if hash in songMapper.keys():
-                matches.append((song['id'], songMapper[hash] - inputMapper[hash]))
+                matches.append((song['songId'], songMapper[hash] - inputMapper[hash]))
 
     return AlignMatches(matches)
 
