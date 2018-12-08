@@ -2,6 +2,8 @@
 
 Ece 429 DSP Independent Study Final Project
 
+![alt text](https://raw.githubusercontent.com/chrisdruta/python-acoustic-fingerprinter/master/images/example.png)
+
 ## Requirements
 
 Requirements can be found in ./python_acoustic-fingerprinter/requirements.txt, but here they are as well:
