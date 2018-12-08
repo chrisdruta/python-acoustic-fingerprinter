@@ -58,7 +58,7 @@ There are multiple possible configurations commented inside the code if want to 
 
 ## How it works
 
-[Final Project Report and Documentation](https://raw.githubusercontent.com/chrisdruta/python-acoustic-fingerprinter/master/images/report.pdf "Project Report")
+[Final Project Report and Documentation](https://github.com/chrisdruta/python-acoustic-fingerprinter/blob/master/images/report.pdf "Project Report")
 
 ## Copyright
 
