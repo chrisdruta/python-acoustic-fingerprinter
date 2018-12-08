@@ -4,6 +4,25 @@ Ece 429 DSP Independent Study Final Project
 
 ![alt text](https://raw.githubusercontent.com/chrisdruta/python-acoustic-fingerprinter/master/images/example.png)
 
+> Fingerprint Example
+
+```
+> Executing task: python main.py <
+
+Matching clip1....
+Matched with Space Jam
+Matching clip2....
+Matched with Space Jam
+Matching clip3....
+Matched with Ghost Slammers
+Matching clip4....
+Matched with Ghost Slammers
+
+Terminal will be reused by tasks, press any key to close it.
+```
+
+> Example Script Output
+
 ## Requirements
 
 Requirements can be found in ./python_acoustic-fingerprinter/requirements.txt, but here they are as well:
