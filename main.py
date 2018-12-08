@@ -1,6 +1,7 @@
 #!/bin/python
-import numpy as np
+import sys
 
+import numpy as np
 from scipy.io import wavfile
 
 import sounddevice as sd
@@ -9,15 +10,26 @@ sd.default.device = 7
 import fingerprint as fp
 
 # Reading in files
+print('Reading In Files... ', end='')
+sys.stdout.flush()
+
 fs, song1 = wavfile.read('sounds/spacejam.wav')
 
-song1 = song1[:, 0] # Left channel to make mono
-song2 = wavfile.read('sounds/ghostslammers.wav')[1] # Already mono
-noise = wavfile.read('sounds/noise.wav')[1] # Already mono
+#song1 = song1[:, 0] # Left channel to make mono
+song2 = wavfile.read('sounds/ghostslammers.wav')[1] # Rest already mono
+noise = wavfile.read('sounds/noise.wav')[1]
 
-# Generating clips to try to match (test)
+recording1 = wavfile.read('sounds/recording1.wav')[1]
+recording2 = wavfile.read('sounds/recording2.wav')[1]
+
+print('Done')
+
+# Generating clips used for testing
+print('Generating Clips... ', end='')
+sys.stdout.flush()
+
 clipDuration = 5
-clipMultiplier = 0.5
+clipMultiplier = 0.2
 noiseMultiplier = 10
 
 clip1 = song1[int(len(song1)/2) - fs * clipDuration:int(len(song1)/2)]
@@ -36,21 +48,25 @@ clip3 = addNoise(clip3, noiseClip2)
 clip4 = addNoise(clip4, noiseClip1)
 
 # Toggle playing a clip back
-if 0:
-    sd.play(clip1, fs)
+if 1:
+    sd.play(recording1, fs)
 
+print('Done')
+
+print('Finger Printing Samples... ', end='')
+sys.stdout.flush()
+
+# Library of songs to search through when matching
 songList = [
     {
         'songId': 1,
         'title': 'Space Jam',
-        'offset': 0,
-        'hashes': fp.Fingerprint(song1, fs, True)
+        'hashes': fp.Fingerprint(song1, fs, graph=False)
     },
     {
         'songId': 2,
         'title': 'Ghost Slammers',
-        'offset': 0,
-        'hashes': fp.Fingerprint(song2, fs, True)
+        'hashes': fp.Fingerprint(song2, fs, graph=False)
     }
 ]
 
@@ -59,15 +75,22 @@ fp1 = fp.Fingerprint(clip1, fs)
 fp2 = fp.Fingerprint(clip2, fs)
 fp3 = fp.Fingerprint(clip3, fs)
 fp4 = fp.Fingerprint(clip4, fs)
+fp5 = fp.Fingerprint(recording1, fs)
+fp6 = fp.Fingerprint(recording2, fs)
+
+print('Done\n')
 
 def test(clip, name, songList):
-    print(f"Matching {name}....")
+    print(f"Matching {name}..")
     result = fp.FindMatches(clip, songList)
-    print(f"Matched with {songList[result - 1]['title']}" if result != -1 else 'Failed to match')
+    print(f"Matched with {songList[result - 1]['title']}\n" if result != -1 else 'Failed to match\n')
 
 # Toggle tests
 if 1:
+    print('Starting Tests\n')
     test(fp1, 'clip1', songList)
     test(fp2, 'clip2', songList)
     test(fp3, 'clip3', songList)
     test(fp4, 'clip4', songList)
+    test(fp5, 'recording1', songList)
+    test(fp6, 'recording2', songList)
