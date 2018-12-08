@@ -190,7 +190,7 @@ def FindMatches(hashes, knownSongList):
             if hash in songMapper.keys():
                 matches.append((song['songId'], songMapper[hash] - inputMapper[hash]))
 
-    print(matches)
+    print(f"Number of matches: {len(matches)}")
     return AlignMatches(matches)
 
 def AlignMatches(matches):
@@ -217,5 +217,5 @@ def AlignMatches(matches):
         if diffMap[diff][sid] > largestCount:
             largestCount = diffMap[diff][sid]
             songId = sid
-    print(diffMap)
+    
     return songId

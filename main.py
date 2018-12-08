@@ -14,11 +14,10 @@ print('Reading In Files... ', end='')
 sys.stdout.flush()
 
 fs, song1 = wavfile.read('sounds/spacejam.wav')
-
-#song1 = song1[:, 0] # Left channel to make mono
-song2 = wavfile.read('sounds/ghostslammers.wav')[1] # Rest already mono
+song2 = wavfile.read('sounds/ghostslammers.wav')[1]
 noise = wavfile.read('sounds/noise.wav')[1]
 
+# Clips recorded from phone
 recording1 = wavfile.read('sounds/recording1.wav')[1]
 recording2 = wavfile.read('sounds/recording2.wav')[1]
 
@@ -29,11 +28,12 @@ print('Generating Clips... ', end='')
 sys.stdout.flush()
 
 clipDuration = 5
-clipMultiplier = 0.2
+clipMultiplier = 0.3
 noiseMultiplier = 10
+recordingMultiplier = 6
 
 clip1 = song1[int(len(song1)/2) - fs * clipDuration:int(len(song1)/2)]
-clip2 = song1[int(len(song1)/4): int(len(song1)/4) + fs * clipDuration]
+clip2 = song1[int(len(song1)/8): int(len(song1)/8) + fs * clipDuration]
 clip3 = song2[int(len(song2)/2) - fs * clipDuration:int(len(song2)/2)]
 clip4 = song2[int(len(song2)/4): int(len(song2)/4) + fs * clipDuration]
 
@@ -47,8 +47,11 @@ clip2 = addNoise(clip2, noiseClip2)
 clip3 = addNoise(clip3, noiseClip2)
 clip4 = addNoise(clip4, noiseClip1)
 
+recording1 = recording1 * recordingMultiplier
+recording2 = recording2 * recordingMultiplier
+
 # Toggle playing a clip back
-if 1:
+if 0:
     sd.play(recording1, fs)
 
 print('Done')
@@ -71,7 +74,7 @@ songList = [
 ]
 
 # Fingerprinting clips
-fp1 = fp.Fingerprint(clip1, fs)
+fp1 = fp.Fingerprint(clip1, fs, graph=False)
 fp2 = fp.Fingerprint(clip2, fs)
 fp3 = fp.Fingerprint(clip3, fs)
 fp4 = fp.Fingerprint(clip4, fs)
