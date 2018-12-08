@@ -44,13 +44,13 @@ songList = [
         'songId': 1,
         'title': 'Space Jam',
         'offset': 0,
-        'hashes': fp.Fingerprint(song1, fs)
+        'hashes': fp.Fingerprint(song1, fs, True)
     },
     {
         'songId': 2,
         'title': 'Ghost Slammers',
         'offset': 0,
-        'hashes': fp.Fingerprint(song2, fs)
+        'hashes': fp.Fingerprint(song2, fs, True)
     }
 ]
 
@@ -63,7 +63,7 @@ fp4 = fp.Fingerprint(clip4, fs)
 def test(clip, name, songList):
     print(f"Matching {name}....")
     result = fp.FindMatches(clip, songList)
-    print(f"Matched with {songList[result + 1]['title']}" if result != -1 else 'Failed to match')
+    print(f"Matched with {songList[result - 1]['title']}" if result != -1 else 'Failed to match')
 
 # Toggle tests
 if 1:
